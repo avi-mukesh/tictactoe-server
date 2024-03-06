@@ -3,7 +3,9 @@ require("dotenv").config();
 const app = require("express")();
 
 // app.use(cors());
+const connectDB = require("./config/dbConn");
 const cookieParser = require("cookie-parser");
+
 const { default: mongoose } = require("mongoose");
 app.use(cookieParser());
 
@@ -15,6 +17,8 @@ const io = require("socket.io")(server, {
 });
 
 const port = process.env.PORT || 3001;
+
+connectDB();
 
 app.get("/", (req, res) => {
   res.send({ message: "Hello world!" });
