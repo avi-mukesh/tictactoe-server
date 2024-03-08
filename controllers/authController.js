@@ -11,7 +11,7 @@ const login = asyncHandler(async (req, res) => {
 
   console.log(`logging in with ${username}, ${password}`);
 
-  res.json({ accessToken: "testtokenbaby" });
+  res.json({ username, accessToken: "testtokenbaby" });
 });
 
 const register = asyncHandler(async (req, res) => {

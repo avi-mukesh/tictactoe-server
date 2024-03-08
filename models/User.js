@@ -1,4 +1,4 @@
-import { mongoose } from "mongoose";
+const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema(
   {
@@ -32,4 +32,4 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 
 const User = mongoose.model("User", userSchema);
 
-export default User;
+module.exports = User;

@@ -7,7 +7,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "*",
+    origin: "http://localhost:3000",
   })
 );
 const connectDB = require("./config/dbConn");
@@ -32,15 +32,20 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", require("./routes/authRoutes"));
+app.use("/user", require("./routes/userRoutes"));
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
-  socket.on("send-message", (data) => {
-    socket.to(data.room).emit("receive-message", data.message);
-  });
+  // socket.on("send-message", (data) => {
+  //   socket.to(data.room).emit("receive-message", data.message);
+  // });
 
-  socket.on("join-room", (room) => {
-    socket.join(room);
+  // socket.on("join-room", (room) => {
+  //   socket.join(room);
+  // });
+
+  socket.on("challenge-created", (username) => {
+    console.log(`${username} has created a challenge`);
   });
 });
 
