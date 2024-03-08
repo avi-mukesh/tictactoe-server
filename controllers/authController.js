@@ -1,3 +1,7 @@
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
 const asyncHandler = require("express-async-handler");
 
 // @desc Login
@@ -9,9 +13,17 @@ const login = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  console.log(`logging in with ${username}, ${password}`);
+  const foundUser = await User.findOne({ username }).exec();
+  if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
 
-  res.json({ username, accessToken: "testtokenbaby" });
+  const match = await bcrypt.compare(password, foundUser.password);
+  if (!match) return res.status(401).json({ message: "Unauthorized" });
+
+  const accessToken = jwt.sign({ username }, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "60m",
+  });
+
+  res.json({ accessToken });
 });
 
 const register = asyncHandler(async (req, res) => {
@@ -19,6 +31,20 @@ const register = asyncHandler(async (req, res) => {
 
   if (!username || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
+  }
+
+  let duplicate = await User.findOne({ username }).lean().exec();
+  if (duplicate) return res.status(409).json({ message: "Duplicate username" });
+
+  duplicate = await User.findOne({ email }).lean().exec();
+  if (duplicate) return res.status(409).json({ message: "Duplicate email" });
+
+  const user = await User.create({ username, email, password });
+  if (user) {
+    console.log("created user", username, email);
+    res.status(201).json({ message: `New user ${username} created` });
+  } else {
+    res.status(400).json({ message: "Invalid user data received" });
   }
 
   res.status(201).json({ message: `New user ${username} created` });
