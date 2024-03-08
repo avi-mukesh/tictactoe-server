@@ -1,8 +1,15 @@
 require("dotenv").config();
 
-const app = require("express")();
+const express = require("express");
+const app = express();
+const cors = require("cors");
+app.use(express.json());
 
-// app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 const connectDB = require("./config/dbConn");
 const cookieParser = require("cookie-parser");
 
@@ -18,11 +25,13 @@ const io = require("socket.io")(server, {
 
 const port = process.env.PORT || 3001;
 
-connectDB();
+// connectDB();
 
 app.get("/", (req, res) => {
   res.send({ message: "Hello world!" });
 });
+
+app.use("/auth", require("./routes/authRoutes"));
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -35,8 +44,8 @@ io.on("connection", (socket) => {
   });
 });
 
-mongoose.connection.once("open", () => {
-  console.log("Connected to MongoDB");
+// mongoose.connection.once("open", () => {
+// console.log("Connected to MongoDB");
 
-  server.listen(port, () => console.log(`Server listening on port ${port}`));
-});
+server.listen(port, () => console.log(`Server listening on port ${port}`));
+// });
