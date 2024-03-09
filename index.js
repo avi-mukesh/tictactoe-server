@@ -9,7 +9,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://admin.socket.io"],
   })
 );
 const connectDB = require("./config/dbConn");
@@ -22,6 +22,7 @@ const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
     origin: ["http://localhost:3000", "https://admin.socket.io"],
+    credentials: true,
   },
 });
 
@@ -38,13 +39,6 @@ app.use("/user", require("./routes/userRoutes"));
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
-  // socket.on("send-message", (data) => {
-  //   socket.to(data.room).emit("receive-message", data.message);
-  // });
-
-  // socket.on("join-room", (room) => {
-  //   socket.join(room);
-  // });
 
   const WAITING_ROOM = "waiting_room";
 
@@ -58,8 +52,19 @@ io.on("connection", (socket) => {
     );
 
     if (io.sockets.adapter.rooms.get(WAITING_ROOM).size == 2) {
-      console.log("game started!");
-      socket.to(WAITING_ROOM).emit("game_started");
+      const waiting_room = [...io.sockets.adapter.rooms.get(WAITING_ROOM)];
+
+      const clientOneId = waiting_room[0];
+      const clientTwoId = waiting_room[1];
+
+      const symbols = {
+        [clientOneId]: "NOUGHTS",
+        [clientTwoId]: "CROSSES",
+      };
+
+      io.in(WAITING_ROOM).emit("game_started", symbols);
+
+      io.in(WAITING_ROOM).socketsLeave(WAITING_ROOM);
     }
   });
 
