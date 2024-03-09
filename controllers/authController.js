@@ -46,8 +46,6 @@ const register = asyncHandler(async (req, res) => {
   } else {
     res.status(400).json({ message: "Invalid user data received" });
   }
-
-  res.status(201).json({ message: `New user ${username} created` });
 });
 
 // @desc logout
