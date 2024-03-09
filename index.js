@@ -16,6 +16,7 @@ const connectDB = require("./config/dbConn");
 const cookieParser = require("cookie-parser");
 
 const { mongoose } = require("mongoose");
+const { compareSync } = require("bcrypt");
 app.use(cookieParser());
 
 const server = require("http").createServer(app);
@@ -37,10 +38,11 @@ app.get("/", (req, res) => {
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/user", require("./routes/userRoutes"));
 
+const WAITING_ROOM = "waiting_room";
+const GAME_ROOM = "game_room";
+
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
-
-  const WAITING_ROOM = "waiting_room";
 
   socket.on("join_waiting_room", (user) => {
     socket.join(WAITING_ROOM);
@@ -64,7 +66,16 @@ io.on("connection", (socket) => {
 
       io.in(WAITING_ROOM).emit("game_started", symbols);
 
+      // console.log(
+      //   "waiting room before: ",
+      //   io.sockets.adapter.rooms.get(WAITING_ROOM)
+      // );
+      io.in(WAITING_ROOM).socketsJoin(GAME_ROOM);
       io.in(WAITING_ROOM).socketsLeave(WAITING_ROOM);
+      // console.log(
+      //   "waiting room after: ",
+      //   io.sockets.adapter.rooms.get(WAITING_ROOM)
+      // );
     }
   });
 
@@ -75,6 +86,10 @@ io.on("connection", (socket) => {
         io.sockets.adapter.rooms.get(WAITING_ROOM)?.size
       }`
     );
+  });
+
+  socket.on("made_move", (data) => {
+    socket.to(GAME_ROOM).emit("made_move", data);
   });
 });
 
