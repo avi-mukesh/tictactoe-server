@@ -13,6 +13,8 @@ const login = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
+  // comment out below when no database available
+  //////
   const foundUser = await User.findOne({ username }).exec();
   if (!foundUser)
     return res
@@ -24,6 +26,7 @@ const login = asyncHandler(async (req, res) => {
     return res
       .status(401)
       .json({ message: "Invalid details. Please try again." });
+  //////
 
   const accessToken = jwt.sign({ username }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "60m",

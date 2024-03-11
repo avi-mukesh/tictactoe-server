@@ -1,7 +1,8 @@
+const Game = require("./models/Game");
+
 const { instrument } = require("@socket.io/admin-ui");
 
 require("dotenv").config();
-
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -44,7 +45,7 @@ const GAME_ROOM = "game_room";
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  socket.on("join_waiting_room", (user) => {
+  socket.on("join_waiting_room", async (user) => {
     socket.join(WAITING_ROOM);
 
     console.log(
@@ -65,17 +66,17 @@ io.on("connection", (socket) => {
       };
 
       io.in(WAITING_ROOM).emit("game_started", symbols);
-
-      // console.log(
-      //   "waiting room before: ",
-      //   io.sockets.adapter.rooms.get(WAITING_ROOM)
-      // );
+      // private game room
       io.in(WAITING_ROOM).socketsJoin(GAME_ROOM);
       io.in(WAITING_ROOM).socketsLeave(WAITING_ROOM);
-      // console.log(
-      //   "waiting room after: ",
-      //   io.sockets.adapter.rooms.get(WAITING_ROOM)
-      // );
+
+      // const game = await Game.create({ username, email, password });
+      // if (game) {
+      //   console.log("created user", username, email);
+      //   res.status(201).json({ message: `New user ${username} created` });
+      // } else {
+      //   res.status(400).json({ message: "Invalid user data received" });
+      // }
     }
   });
 
