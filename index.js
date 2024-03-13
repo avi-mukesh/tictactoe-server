@@ -1,6 +1,8 @@
 const Game = require("./models/Game");
+const User = require("./models/User");
 
 const { instrument } = require("@socket.io/admin-ui");
+const crypto = require("crypto");
 
 require("dotenv").config();
 const express = require("express");
@@ -49,14 +51,26 @@ io.on("connection", (socket) => {
   socket.on("join_waiting_room", async (user) => {
     socket.join(WAITING_ROOM);
 
-    console.log(
-      `${user.username} is in the waiting room. Total waiting now = ${
-        io.sockets.adapter.rooms.get(WAITING_ROOM).size
-      }`
-    );
+    // const userRecord = await User.findOne({ user: user.username })
+    //   .lean()
+    //   .exec();
+    // let unjoinedGame = await Game.findOne({ playerTwo: null }).lean().exec();
+    // // if there is a game with playerOne, then join that game and start it
+    // if (unjoinedGame) {
+    //   notstartedGame.playerTwo = userRecord;
+    //   notstartedGame.timeStarted = new Date();
+    //   notStartedGame.roomId = crypto.randomBytes(20).toString('hex')
+    //   await notStartedGame.save();
+    // } else {
+    //   // otherwise create a new game, with this user as playerOne
+    //   notStartedGame = await Game.create({ playerOne: userRecord });
+    // }
 
     if (io.sockets.adapter.rooms.get(WAITING_ROOM).size == 2) {
       const waiting_room = [...io.sockets.adapter.rooms.get(WAITING_ROOM)];
+
+      // let roomId = notStartedGame.roomId;
+      let roomId = "testroomid";
 
       const clientOneId = waiting_room[0];
       const clientTwoId = waiting_room[1];
@@ -67,19 +81,11 @@ io.on("connection", (socket) => {
       };
 
       // TODO: send the room id here as well
-      io.in(WAITING_ROOM).emit("matched_with_opponent", symbols);
+      io.in(WAITING_ROOM).emit("matched_with_opponent", { symbols, roomId });
       io.in(WAITING_ROOM).emit("request_player_info");
       // private game room
       io.in(WAITING_ROOM).socketsJoin(GAME_ROOM);
       io.in(WAITING_ROOM).socketsLeave(WAITING_ROOM);
-
-      // const game = await Game.create({ username, email, password });
-      // if (game) {
-      //   console.log("created user", username, email);
-      //   res.status(201).json({ message: `New user ${username} created` });
-      // } else {
-      //   res.status(400).json({ message: "Invalid user data received" });
-      // }
     }
   });
 
@@ -99,11 +105,46 @@ io.on("connection", (socket) => {
   });
 
   socket.on("made_move", (data) => {
-    socket.to(GAME_ROOM).emit("made_move", data);
+    console.log(`${data.username} made move in ${data.gameRoomId}`);
+    socket.to(GAME_ROOM).to(`${GAME_ROOM}-spectators`).emit("made_move", data);
   });
 
-  socket.on("request_rematch", () => {
+  socket.on("request_rematch", (gameRoomId) => {
+    console.log("rematch requested in", gameRoomId);
     socket.to(GAME_ROOM).emit("rematch_requested");
+  });
+
+  socket.on("accept_rematch_request", (gameRoomId) => {
+    console.log("accepting rematch request in", gameRoomId);
+    socket.to(GAME_ROOM).emit("accepted_rematch_request");
+  });
+
+  socket.on("game_ended", async (data) => {
+    // const game = await Game.findOne({ roomId: data.roomId }).exec().lean();
+    // game.timeFinished = new Date();
+    // if (data.winner) {
+    //   const winner = await User.findOne({ username: winner }).exec().lean();
+    //   game.winner = winner;
+    //   await game.save();
+    // }
+    console.log(
+      `game with id ${data.gameRoomId} ended. winner is ${data.winner}`
+    );
+  });
+
+  socket.on("spectate_game", async (data) => {
+    console.log(`someone wants to spectate game with room ${data.gameRoomId}`);
+
+    // const ongoingGame = await Game.findOne({ roomId: gameRoomId })
+    //   .lean()
+    //   .exec();
+    const ongoingGamePlayerInfo = {
+      playerOne: { username: "a", symbol: "NOUGHTS" },
+      playerTwo: { username: "b", symbol: "CROSSES" },
+    };
+
+    socket.join(`${data.gameRoomId}-spectators`);
+    socket.emit("receive_ongoing_game_player_info", ongoingGamePlayerInfo);
   });
 });
 

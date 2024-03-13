@@ -10,11 +10,11 @@ const gameSchema = mongoose.Schema(
     playerTwo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
     },
     timeStarted: {
       type: Date,
-      required: true,
+      required: false,
     },
     timeFinished: {
       type: Date,
@@ -23,6 +23,10 @@ const gameSchema = mongoose.Schema(
     winner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: false,
+    },
+    roomId: {
+      type: String,
       required: false,
     },
   },
