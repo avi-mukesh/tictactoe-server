@@ -124,9 +124,30 @@ io.on("connection", (socket) => {
     socket.to(gameRoomId).emit("rematch_requested");
   });
 
-  socket.on("accept_rematch_request", (gameRoomId) => {
+  socket.on("accept_rematch_request", async ({ gameRoomId }) => {
+    const prevGame = await Game.findOne({ roomId: gameRoomId }).exec();
+
+    // swapping the players
+    const playerOne = prevGame.playerTwo;
+    const playerTwo = prevGame.playerOne;
+
+    const newGameRoomId = crypto.randomBytes(20).toString("hex");
+
+    io.in(gameRoomId).socketsJoin(newGameRoomId);
+    io.in(gameRoomId).socketsLeave(gameRoomId);
+
     console.log("accepting rematch request in", gameRoomId);
-    socket.to(gameRoomId).emit("accepted_rematch_request");
+    console.log("new game room id", newGameRoomId);
+
+    socket.to(newGameRoomId).emit("accepted_rematch_request", newGameRoomId);
+    socket.emit("new_game_room_id", newGameRoomId);
+
+    const newGame = await Game.create({
+      playerOne,
+      playerTwo,
+      roomId: newGameRoomId,
+      timeStarted: new Date(),
+    });
   });
 
   socket.on("game_ended", async (data) => {
