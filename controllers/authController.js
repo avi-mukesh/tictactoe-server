@@ -15,17 +15,17 @@ const login = asyncHandler(async (req, res) => {
 
   // comment out below when no database available
   //////
-  // const foundUser = await User.findOne({ username }).exec();
-  // if (!foundUser)
-  //   return res
-  //     .status(401)
-  //     .json({ message: "Invalid details. Please try again." });
+  const foundUser = await User.findOne({ username }).exec();
+  if (!foundUser)
+    return res
+      .status(401)
+      .json({ message: "Invalid details. Please try again." });
 
-  // const match = await bcrypt.compare(password, foundUser.password);
-  // if (!match)
-  //   return res
-  //     .status(401)
-  //     .json({ message: "Invalid details. Please try again." });
+  const match = await bcrypt.compare(password, foundUser.password);
+  if (!match)
+    return res
+      .status(401)
+      .json({ message: "Invalid details. Please try again." });
   //////
 
   const accessToken = jwt.sign({ username }, process.env.ACCESS_TOKEN_SECRET, {
