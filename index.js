@@ -77,6 +77,7 @@ io.on("connection", (socket) => {
 
       let roomId = notStartedGame.roomId;
       console.log("roomId is", roomId);
+      console.log("room is", notstartedGame);
 
       const clientOneId = waiting_room[0];
       const clientTwoId = waiting_room[1];
@@ -111,8 +112,25 @@ io.on("connection", (socket) => {
     );
   });
 
-  socket.on("made_move", (data) => {
+  socket.on("made_move", async (data) => {
     console.log(`${data.username} made move in ${data.gameRoomId}`);
+
+    //TODO : fix this
+    const game = await Game.findOne({ roomId: data.gameRoomId });
+    const playerOne = await User.findById(game.playerOne);
+
+    let symbol;
+
+    if (playerOne.username === data.username) {
+      symbol = "O";
+    } else {
+      symbol = "X";
+    }
+    const newBoardState = [...game.boardState];
+    newBoardState[data.coordinates.y][data.coordinates.x] = symbol;
+    game.boardState = newBoardState;
+    await game.save();
+
     socket
       .to(data.gameRoomId)
       .to(`${data.gameRoomId}-spectators`)
@@ -170,20 +188,37 @@ io.on("connection", (socket) => {
   });
 
   socket.on("spectate_game", async (data) => {
-    // console.log(`someone wants to spectate game with room ${data.gameRoomId}`);
+    console.log(`someone wants to spectate game with room ${data.gameRoomId}`);
 
-    // const ongoingGame = await Game.findOne({ roomId: gameRoomId })
-    //   .lean()
-    //   .exec();
-    const ongoingGamePlayerInfo = {
-      playerOne: { username: "a", symbol: "NOUGHTS" },
-      playerTwo: { username: "b", symbol: "CROSSES" },
-    };
+    const ongoingGame = await Game.findOne({ roomId: data.gameRoomId })
+      .lean()
+      .exec();
 
-    socket.join(`${data.gameRoomId}-spectators`);
-    socket.emit("receive_ongoing_game_player_info", {
-      ongoingGamePlayerInfo,
-    });
+    if (ongoingGame) {
+      const {
+        boardState: ongoingGameBoardState,
+        playerOne: playerOneId,
+        playerTwo: playerTwoId,
+      } = ongoingGame;
+
+      const playerOne = await User.findById(playerOneId).lean().exec();
+      const playerTwo = await User.findById(playerTwoId).lean().exec();
+
+      const ongoingGamePlayerInfo = {
+        playerOne: { username: playerOne.username, symbol: "NOUGHTS" },
+        playerTwo: { username: playerTwo.username, symbol: "CROSSES" },
+      };
+
+      socket.join(`${data.gameRoomId}-spectators`);
+      socket.emit("receive_ongoing_game_player_info", {
+        ongoingGamePlayerInfo,
+      });
+      socket.emit("receive_ongoing_game_boardstate", {
+        ongoingGameBoardState,
+      });
+    } else {
+      socket.emit("invalid_game_room");
+    }
   });
 });
 

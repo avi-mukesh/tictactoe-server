@@ -29,6 +29,15 @@ const gameSchema = mongoose.Schema(
       type: String,
       required: false,
     },
+    boardState: {
+      type: [[String]],
+      required: true,
+      default: [
+        ["", "", ""],
+        ["", "", ""],
+        ["", "", ""],
+      ],
+    },
   },
   { timestamps: true }
 );
