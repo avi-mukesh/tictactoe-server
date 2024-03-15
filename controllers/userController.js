@@ -1,9 +1,11 @@
-// const User = require("../models/User");
+const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 
 const getUser = asyncHandler(async (req, res) => {
-  const id = parseInt(req.params.id);
-  return res.status(200).json({ message: `Here is your user with id ${id}` });
+  const id = req.params.id;
+  console.log("requesting user with id", id);
+  const user = await User.findById(id).lean().exec();
+  return res.status(200).json(user);
 });
 
 module.exports = { getUser };
