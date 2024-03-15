@@ -41,9 +41,9 @@ app.get("/", (req, res) => {
 
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/user", require("./routes/userRoutes"));
+app.use("/game", require("./routes/gameRoutes"));
 
 const WAITING_ROOM = "waiting_room";
-const GAME_ROOM = "game_room";
 
 io.on("connection", (socket) => {
   socket.on("join_waiting_room", async (user) => {
