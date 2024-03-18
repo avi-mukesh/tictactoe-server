@@ -48,26 +48,17 @@ const WAITING_ROOM = "waiting_room";
 io.on("connection", (socket) => {
   socket.on("join_waiting_room", async (user) => {
     socket.join(WAITING_ROOM);
-    // console.log("waiting room = ", io.sockets.adapter.rooms.get(WAITING_ROOM));
-
     const userRecord = await User.findOne({ username: user.username })
       .lean()
       .exec();
     let notstartedGame = await Game.findOne({ playerTwo: null }).exec();
     // if there is a game with playerOne, then join that game and start it
     if (notstartedGame) {
-      console.log(
-        "there is a game that doesn't have a player 2: ",
-        notstartedGame
-      );
-      console.log("setting player 2 to", userRecord);
       notStartedGame.roomId = crypto.randomBytes(20).toString("hex");
       notStartedGame.timeStarted = new Date();
       notStartedGame.playerTwo = userRecord;
-      const updatedgame = await notStartedGame.save();
-      console.log(updatedgame);
+      await notStartedGame.save();
     } else {
-      console.log("creating new game...");
       // otherwise create a new game, with this user as playerOne
       notStartedGame = await Game.create({ playerOne: userRecord });
     }
@@ -76,8 +67,6 @@ io.on("connection", (socket) => {
       const waiting_room = [...io.sockets.adapter.rooms.get(WAITING_ROOM)];
 
       let roomId = notStartedGame.roomId;
-      console.log("roomId is", roomId);
-      console.log("room is", notstartedGame);
 
       const clientOneId = waiting_room[0];
       const clientTwoId = waiting_room[1];
@@ -100,22 +89,20 @@ io.on("connection", (socket) => {
     socket.to(data.gameRoomId).emit("set_opponent_info", data.user);
   });
 
-  socket.on("leave_waiting_room", (user) => {
+  socket.on("leave_waiting_room", async (user) => {
     socket.leave(WAITING_ROOM);
+    // delete the game object created in database
+    const playerOne = await User.findOne({
+      username: user.username,
+      playerTwo: null,
+    }).exec();
+    const notStartedGame = await Game.findOne({ playerOne }).exec();
+    await notStartedGame.deleteOne();
 
-    console.log(
-      `${
-        user.username
-      } has left the waiting room. Waiting room geezas = ${io.sockets.adapter.rooms.get(
-        WAITING_ROOM
-      )}`
-    );
+    // } has left the waiting room. Waiting room geezas = ${io.sockets.adapter.rooms.get(
   });
 
   socket.on("made_move", async (data) => {
-    console.log(`${data.username} made move in ${data.gameRoomId}`);
-
-    //TODO : fix this
     const game = await Game.findOne({ roomId: data.gameRoomId });
     const playerOne = await User.findById(game.playerOne);
 
@@ -138,7 +125,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("request_rematch", (gameRoomId) => {
-    console.log("rematch requested in", gameRoomId);
     socket.to(gameRoomId).emit("rematch_requested");
   });
 
@@ -153,9 +139,6 @@ io.on("connection", (socket) => {
 
     io.in(gameRoomId).socketsJoin(newGameRoomId);
     io.in(gameRoomId).socketsLeave(gameRoomId);
-
-    console.log("accepting rematch request in", gameRoomId);
-    console.log("new game room id", newGameRoomId);
 
     socket.to(newGameRoomId).emit("accepted_rematch_request", newGameRoomId);
     socket.emit("new_game_room_id", newGameRoomId);
@@ -176,8 +159,6 @@ io.on("connection", (socket) => {
         .lean()
         .exec();
 
-      console.log("setting winner to", winner);
-      // TODO: set player two here because it is not setting above for some reason
       game.winner = winner;
     }
     await game.save();
@@ -188,8 +169,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("spectate_game", async (data) => {
-    console.log(`someone wants to spectate game with room ${data.gameRoomId}`);
-
     const ongoingGame = await Game.findOne({ roomId: data.gameRoomId })
       .lean()
       .exec();
@@ -219,6 +198,37 @@ io.on("connection", (socket) => {
     } else {
       socket.emit("invalid_game_room");
     }
+  });
+
+  socket.on("create_custom_game_room", async (username) => {
+    const roomId = crypto.randomBytes(20).toString("hex");
+    const userRecord = await User.findOne({ username }).exec();
+    await Game.create({ playerOne: userRecord, roomId });
+    socket.emit("custom_game_room_created", roomId);
+    socket.join(roomId);
+  });
+
+  socket.on("join_custom_game_room", async ({ username, roomId }) => {
+    socket.join(roomId);
+    const gameRoom = [...io.sockets.adapter.rooms.get(roomId)];
+    console.log("gameroom:", gameRoom);
+
+    const clientOneId = gameRoom[0];
+    const clientTwoId = gameRoom[1];
+
+    const symbols = {
+      [clientOneId]: "NOUGHTS",
+      [clientTwoId]: "CROSSES",
+    };
+
+    io.in(gameRoom).emit("matched_with_opponent", { symbols, roomId });
+    io.in(gameRoom).emit("request_player_info", { gameRoomId: roomId });
+
+    const playerTwo = await User.findOne({ username }).exec();
+    const notStartedGame = await Game.findOne({ roomId }).exec();
+    notStartedGame.timeStarted = new Date();
+    notStartedGame.playerTwo = playerTwo;
+    await notStartedGame.save();
   });
 });
 
