@@ -48,6 +48,7 @@ const WAITING_ROOM = "waiting_room";
 io.on("connection", (socket) => {
   socket.on("join_waiting_room", async (user) => {
     socket.join(WAITING_ROOM);
+    console.log(`${user.username} joined waiting room`);
     const userRecord = await User.findOne({ username: user.username })
       .lean()
       .exec();
