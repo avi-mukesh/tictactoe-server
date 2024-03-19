@@ -27,7 +27,7 @@ const io = require("socket.io")(server, {
   cors: {
     origin: "*",
     // origin: ["http://localhost:3000", "https://admin.socket.io"],
-    credentials: true,
+    // credentials: true,
   },
 });
 
