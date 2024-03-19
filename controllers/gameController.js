@@ -1,5 +1,6 @@
 const Game = require("../models/Game");
 const asyncHandler = require("express-async-handler");
+const User = require("../models/User");
 
 const getOngoingGames = asyncHandler(async (req, res) => {
   console.log("requested ongoing games");
@@ -10,4 +11,16 @@ const getOngoingGames = asyncHandler(async (req, res) => {
   return res.status(200).json(ongoingGames);
 });
 
-module.exports = { getOngoingGames };
+const getPreviousGames = asyncHandler(async (req, res) => {
+  const { username } = req.query;
+  console.log("requested previous games for", username);
+
+  const user = await User.findOne({ username }).exec();
+  const previousGames = await Game.find({
+    $or: [{ playerOne: user }, { playerTwo: user }],
+  });
+
+  return res.status(200).json(previousGames);
+});
+
+module.exports = { getOngoingGames, getPreviousGames };

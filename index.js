@@ -51,15 +51,17 @@ io.on("connection", (socket) => {
     const userRecord = await User.findOne({ username: user.username })
       .lean()
       .exec();
-    let notstartedGame = await Game.findOne({ playerTwo: null }).exec();
+    let notStartedGame = await Game.findOne({ playerTwo: null }).exec();
     // if there is a game with playerOne, then join that game and start it
-    if (notstartedGame) {
+    if (notStartedGame) {
       notStartedGame.roomId = crypto.randomBytes(20).toString("hex");
       notStartedGame.timeStarted = new Date();
       notStartedGame.playerTwo = userRecord;
       await notStartedGame.save();
+      console.log("game exists");
     } else {
       // otherwise create a new game, with this user as playerOne
+      console.log("creating new game");
       notStartedGame = await Game.create({ playerOne: userRecord });
     }
 
@@ -201,9 +203,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("create_custom_game_room", async (username) => {
-    const roomId = crypto.randomBytes(20).toString("hex");
     const userRecord = await User.findOne({ username }).exec();
-    await Game.create({ playerOne: userRecord, roomId });
+    const existingGame = await Game.findOne({
+      playerOne: userRecord,
+      playerTwo: null,
+      roomId: { $ne: null },
+    });
+
+    let roomId;
+
+    if (existingGame) {
+      roomId = existingGame.roomId;
+    } else {
+      roomId = crypto.randomBytes(20).toString("hex");
+      await Game.create({ playerOne: userRecord, roomId });
+    }
+
     socket.emit("custom_game_room_created", roomId);
     socket.join(roomId);
   });
