@@ -28,9 +28,13 @@ const login = asyncHandler(async (req, res) => {
       .json({ message: "Invalid details. Please try again." });
   //////
 
-  const accessToken = jwt.sign({ username }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "60m",
-  });
+  const accessToken = jwt.sign(
+    { username, id: foundUser.id },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: "60m",
+    }
+  );
 
   res.json({ accessToken });
 });
