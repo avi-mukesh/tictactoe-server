@@ -9,12 +9,13 @@ const asyncHandler = require("express-async-handler");
 // @access Public
 const login = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
+
+  console.log(`${username} is trying to log in...`);
+
   if (!username || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  // comment out below when no database available
-  //////
   const foundUser = await User.findOne({ username }).exec();
   if (!foundUser)
     return res
@@ -26,7 +27,6 @@ const login = asyncHandler(async (req, res) => {
     return res
       .status(401)
       .json({ message: "Invalid details. Please try again." });
-  //////
 
   const accessToken = jwt.sign(
     { username, id: foundUser.id },
@@ -41,6 +41,8 @@ const login = asyncHandler(async (req, res) => {
 
 const register = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
+
+  console.log(`trying to register ${username} with email ${email}`);
 
   if (!username || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
@@ -65,6 +67,8 @@ const register = asyncHandler(async (req, res) => {
 // @route POST /auth/logout
 // @access Public - just to clear cookie if exists
 const logout = (req, res) => {
+  console.log(`logging out`);
+
   const cookies = req.cookies;
   if (cookies.accessToken) return res.sendStatus(200); // No Conten
   res.clearCookie("accessToken", {
