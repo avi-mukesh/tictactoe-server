@@ -46,6 +46,7 @@ app.use("/game", require("./routes/gameRoutes"));
 const WAITING_ROOM = "waiting_room";
 
 io.on("connection", (socket) => {
+  console.log("Someone connected");
   socket.on("join_waiting_room", async (user) => {
     socket.join(WAITING_ROOM);
     console.log(`${user.username} joined waiting room`);
@@ -88,6 +89,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("receive_player_info", (data) => {
+    console.log("sending player info", data.user);
     // forward player info to the opponent
     socket.to(data.gameRoomId).emit("set_opponent_info", data.user);
   });
@@ -102,12 +104,14 @@ io.on("connection", (socket) => {
     const notStartedGame = await Game.findOne({ playerOne }).exec();
     await notStartedGame.deleteOne();
 
+    console.log(`${user.username} left the waiting room`);
     // } has left the waiting room. Waiting room geezas = ${io.sockets.adapter.rooms.get(
   });
 
   socket.on("made_move", async (data) => {
     const game = await Game.findOne({ roomId: data.gameRoomId });
     const playerOne = await User.findById(game.playerOne);
+    console.log(`${playerOne.username} made a move`);
 
     let symbol;
 
@@ -128,10 +132,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("request_rematch", (gameRoomId) => {
+    console.log(`rematch requested in game room ${gameRoomId}`);
     socket.to(gameRoomId).emit("rematch_requested");
   });
 
   socket.on("accept_rematch_request", async ({ gameRoomId }) => {
+    console.log(`rematch accepted in game room ${gameRoomId}`);
     const prevGame = await Game.findOne({ roomId: gameRoomId }).exec();
 
     // swapping the players
@@ -155,6 +161,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("game_ended", async (data) => {
+    console.log(`game in room ${data.gameRoomId} ended`);
+
     const game = await Game.findOne({ roomId: data.gameRoomId }).exec();
     game.timeFinished = new Date();
     if (data.winner) {
@@ -172,6 +180,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("spectate_game", async (data) => {
+    console.log(`someone wants to spectate ${data.gameRoomId}`);
+
     const ongoingGame = await Game.findOne({ roomId: data.gameRoomId })
       .lean()
       .exec();
@@ -204,6 +214,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("create_custom_game_room", async (username) => {
+    console.log(`${username} creating a custom game room`);
+
     const userRecord = await User.findOne({ username }).exec();
     const existingGame = await Game.findOne({
       playerOne: userRecord,
@@ -225,6 +237,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join_custom_game_room", async ({ username, roomId }) => {
+    console.log(`${username} joining custom game room ${roomId}`);
+
     socket.join(roomId);
     const gameRoom = [...io.sockets.adapter.rooms.get(roomId)];
     console.log("gameroom:", gameRoom);
