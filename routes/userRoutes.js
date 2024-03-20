@@ -5,5 +5,6 @@ const verifyJWT = require("../middleware/verifyJWT");
 
 // router.use(verifyJWT);
 router.route("/:id").get(usersController.getUser);
+router.route("/:id").put(usersController.updateUserPassword);
 
 module.exports = router;
