@@ -102,16 +102,19 @@ io.on("connection", (socket) => {
       playerTwo: null,
     }).exec();
     const notStartedGame = await Game.findOne({ playerOne }).exec();
-    await notStartedGame.deleteOne();
+
+    if (notStartedGame) {
+      await notStartedGame.deleteOne();
+    }
 
     console.log(`${user.username} left the waiting room`);
     // } has left the waiting room. Waiting room geezas = ${io.sockets.adapter.rooms.get(
   });
 
   socket.on("made_move", async (data) => {
+    console.log(data.username, "made a move in room", data.gameRoomId);
     const game = await Game.findOne({ roomId: data.gameRoomId });
     const playerOne = await User.findById(game.playerOne);
-    console.log(`${playerOne.username} made a move`);
 
     let symbol;
 
