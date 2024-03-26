@@ -38,6 +38,14 @@ const gameSchema = mongoose.Schema(
         ["", "", ""],
       ],
     },
+    playerOneEloChange: {
+      type: Number,
+      required: false,
+    },
+    playerTwoEloChange: {
+      type: Number,
+      required: false,
+    },
   },
   { timestamps: true }
 );

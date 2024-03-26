@@ -173,6 +173,10 @@ io.on("connection", (socket) => {
     const playerTwo = await User.findById(game.playerTwo).lean().exec();
     const c = 400;
     const K = 32;
+
+    let eloChangeOne;
+    let eloChangeTwo;
+
     if (data.winner) {
       const winner = await User.findOne({ username: data.winner }).exec();
       game.winner = winner;
@@ -194,6 +198,16 @@ io.on("connection", (socket) => {
       winner.elo = winner.elo + eloChangeWinner;
       loser.elo = loser.elo + eloChangeLoser;
 
+      const playerOneRecord = await User.findById(game.playerOne).lean().exec();
+      const playerTwoRecord = await User.findById(game.playerTwo).lean().exec();
+      if (playerOneRecord.username === data.winner) {
+        game.playerOneEloChange = eloChangeWinner;
+        game.playerTwoEloChange = eloChangeLoser;
+      } else {
+        game.playerOneEloChange = eloChangeLoser;
+        game.playerTwoEloChange = eloChangeWinner;
+      }
+
       await winner.save();
       await loser.save();
     } else {
@@ -209,6 +223,9 @@ io.on("connection", (socket) => {
 
       playerOneRecord.elo = playerOneRecord.elo + eloChangeOne;
       playerTwoRecord.elo = playerTwoRecord.elo + eloChangeTwo;
+
+      game.playerOneEloChange = eloChangeOne;
+      game.playerTwoEloChange = eloChangeTwo;
 
       await playerOneRecord.save();
       await playerTwoRecord.save();
