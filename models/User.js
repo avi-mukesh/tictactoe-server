@@ -17,15 +17,20 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    elo: {
+      type: Number,
+      required: true,
+      default: 400,
+    },
   },
   { timestamps: true }
 );
 
 // hash user's password before saving document to db
-userSchema.pre("save", async function () {
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
+// userSchema.pre("save", async function () {
+//   const salt = await bcrypt.genSalt(10);
+//   this.password = await bcrypt.hash(this.password, salt);
+// });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);

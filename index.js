@@ -168,12 +168,50 @@ io.on("connection", (socket) => {
 
     const game = await Game.findOne({ roomId: data.gameRoomId }).exec();
     game.timeFinished = new Date();
-    if (data.winner) {
-      const winner = await User.findOne({ username: data.winner })
-        .lean()
-        .exec();
 
+    const playerOne = await User.findById(game.playerOne).lean().exec();
+    const playerTwo = await User.findById(game.playerTwo).lean().exec();
+    const c = 400;
+    const K = 32;
+    if (data.winner) {
+      const winner = await User.findOne({ username: data.winner }).exec();
       game.winner = winner;
+
+      const loserUsername =
+        playerOne.username === data.winner
+          ? playerTwo.username
+          : playerOne.username;
+      const loser = await User.findOne({ username: loserUsername }).exec();
+
+      const qWinner = Math.pow(10, winner.elo / c);
+      const qLoser = Math.pow(10, loser.elo / c);
+      const expectedOutcomeWinner = qWinner / (qWinner + qLoser);
+      const expectedOutcomeLoser = qLoser / (qWinner + qLoser);
+
+      const eloChangeWinner = Math.round(K * (1 - expectedOutcomeWinner));
+      const eloChangeLoser = Math.round(K * (0 - expectedOutcomeLoser));
+
+      winner.elo = winner.elo + eloChangeWinner;
+      loser.elo = loser.elo + eloChangeLoser;
+
+      await winner.save();
+      await loser.save();
+    } else {
+      const qOne = Math.pow(10, playerOne.elo / c);
+      const qTwo = Math.pow(10, playerTwo.elo / c);
+      const expectedOutcomeOne = qOne / (qOne + qTwo);
+      const expectedOutcomeTwo = qTwo / (qOne + qTwo);
+      const eloChangeOne = Math.round(K * (0.5 - expectedOutcomeOne));
+      const eloChangeTwo = Math.round(K * (0.5 - expectedOutcomeTwo));
+
+      const playerOneRecord = await User.findById(game.playerOne).exec();
+      const playerTwoRecord = await User.findById(game.playerTwo).exec();
+
+      playerOneRecord.elo = playerOneRecord.elo + eloChangeOne;
+      playerTwoRecord.elo = playerTwoRecord.elo + eloChangeTwo;
+
+      await playerOneRecord.save();
+      await playerTwoRecord.save();
     }
     await game.save();
     socket

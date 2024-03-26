@@ -17,6 +17,9 @@ const login = asyncHandler(async (req, res) => {
   }
 
   const foundUser = await User.findOne({ username }).exec();
+
+  console.log("found user:", foundUser);
+
   if (!foundUser)
     return res
       .status(401)
@@ -29,7 +32,7 @@ const login = asyncHandler(async (req, res) => {
       .json({ message: "Invalid details. Please try again." });
 
   const accessToken = jwt.sign(
-    { username, id: foundUser.id },
+    { username, id: foundUser.id, elo: foundUser.elo },
     process.env.ACCESS_TOKEN_SECRET,
     {
       expiresIn: "60m",
@@ -54,7 +57,10 @@ const register = asyncHandler(async (req, res) => {
   duplicate = await User.findOne({ email }).lean().exec();
   if (duplicate) return res.status(409).json({ message: "Duplicate email" });
 
-  const user = await User.create({ username, email, password });
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  const user = await User.create({ username, email, password: hashedPassword });
   if (user) {
     console.log("created user", username, email);
     res.status(201).json({ message: `New user ${username} created` });
