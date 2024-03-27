@@ -9,6 +9,12 @@ const getUser = asyncHandler(async (req, res) => {
   return res.status(200).json(user);
 });
 
+const getUsers = asyncHandler(async (req, res) => {
+  console.log("hello");
+  const users = await User.find({}).exec();
+  return res.status(200).json(users);
+});
+
 const updateUserPassword = asyncHandler(async (req, res) => {
   const id = req.params.id;
   const { currentPassword, newPassword, confirmNewPassword } = req.body;
@@ -35,4 +41,4 @@ const updateUserPassword = asyncHandler(async (req, res) => {
   return res.status(200).json({ message: "Password changed successfully." });
 });
 
-module.exports = { getUser, updateUserPassword };
+module.exports = { getUser, getUsers, updateUserPassword };

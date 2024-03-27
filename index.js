@@ -12,8 +12,13 @@ app.use(express.json());
 
 app.use(
   cors({
-    // origin: ["http://localhost:3000", "https://admin.socket.io"],
-    origin: "*",
+    origin: [
+      "http://localhost:3000",
+      "https://tictactoe.avimukesh.com",
+      "https://tictactoe-5b035.web.app",
+      "https://tictactoe-5b035.firebaseapp.com",
+    ],
+    // origin: "*",
   })
 );
 const connectDB = require("./config/dbConn");
@@ -25,8 +30,13 @@ app.use(cookieParser());
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
-    origin: "*",
-    // origin: ["http://localhost:3000", "https://admin.socket.io"],
+    origin: [
+      "http://localhost:3000",
+      "https://tictactoe.avimukesh.com",
+      "https://tictactoe-5b035.web.app",
+      "https://tictactoe-5b035.firebaseapp.com",
+    ],
+    // origin: "*",
     // credentials: true,
   },
 });
