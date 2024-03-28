@@ -328,6 +328,17 @@ io.on("connection", (socket) => {
     notStartedGame.playerTwo = playerTwo;
     await notStartedGame.save();
   });
+
+  socket.on("delete_incomplete_games", async (username) => {
+    console.log(
+      `deleting unfinished games where ${username} is player one or two`
+    );
+    const user = await User.findOne({ username });
+    await Game.deleteMany({
+      $or: [{ playerOne: user }, { playerTwo: user }],
+      timeFinished: null,
+    });
+  });
 });
 
 mongoose.connection.once("open", () => {

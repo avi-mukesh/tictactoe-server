@@ -18,6 +18,7 @@ const getPreviousGames = asyncHandler(async (req, res) => {
   const user = await User.findOne({ username }).exec();
   const previousGames = await Game.find({
     $or: [{ playerOne: user }, { playerTwo: user }],
+    timeFinished: { $ne: null },
   });
 
   return res.status(200).json(previousGames);
