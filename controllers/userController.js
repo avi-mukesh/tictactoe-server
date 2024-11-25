@@ -35,7 +35,10 @@ const updateUserPassword = asyncHandler(async (req, res) => {
       .status(401)
       .json({ message: "Passwords must match. Please try again." });
 
-  user.password = newPassword;
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  user.password = hashedPassword;
   await user.save();
 
   return res.status(200).json({ message: "Password changed successfully." });

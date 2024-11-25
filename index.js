@@ -109,9 +109,12 @@ io.on("connection", (socket) => {
     // delete the game object created in database
     const playerOne = await User.findOne({
       username: user.username,
+    }).exec();
+
+    const notStartedGame = await Game.findOne({
+      playerOne,
       playerTwo: null,
     }).exec();
-    const notStartedGame = await Game.findOne({ playerOne }).exec();
 
     if (notStartedGame) {
       await notStartedGame.deleteOne();
