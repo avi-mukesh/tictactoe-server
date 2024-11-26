@@ -4,13 +4,17 @@ const asyncHandler = require("express-async-handler");
 
 const getUser = asyncHandler(async (req, res) => {
   const id = req.params.id;
-  console.log("requesting user with id", id);
-  const user = await User.findById(id).exec();
-  return res.status(200).json(user);
+
+  if (id !== "undefined") {
+    console.log("requesting user with id", id);
+    const user = await User.findById(id).exec();
+    return res.status(200).json(user);
+  } else {
+    // return res.status(200).json({ username: "Computer", elo: 9999 });
+  }
 });
 
 const getUsers = asyncHandler(async (req, res) => {
-  console.log("hello");
   const users = await User.find({}).exec();
   return res.status(200).json(users);
 });
@@ -18,9 +22,6 @@ const getUsers = asyncHandler(async (req, res) => {
 const updateUserPassword = asyncHandler(async (req, res) => {
   const id = req.params.id;
   const { currentPassword, newPassword, confirmNewPassword } = req.body;
-  console.log("currentPassword", currentPassword);
-  console.log("newPassword", newPassword);
-  console.log("confirmNewPassword", confirmNewPassword);
 
   const user = await User.findById(id).exec();
   const match = await bcrypt.compare(currentPassword, user.password);
