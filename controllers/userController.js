@@ -6,7 +6,7 @@ const getUser = asyncHandler(async (req, res) => {
   const id = req.params.id;
 
   if (id !== "undefined") {
-    console.log("requesting user with id", id);
+    // console.log("requesting user with id", id);
     const user = await User.findById(id).exec();
     return res.status(200).json(user);
   } else {

@@ -127,6 +127,7 @@ io.on("connection", (socket) => {
   socket.on("made_move", async (data) => {
     console.log(data.username, "made a move in room", data.gameRoomId);
     const game = await Game.findOne({ roomId: data.gameRoomId });
+    console.log("game is", game);
     const playerOne = await User.findById(game.playerOne);
 
     let symbol;
@@ -334,11 +335,15 @@ io.on("connection", (socket) => {
 
   socket.on("delete_incomplete_games", async (username) => {
     console.log(
-      `deleting unfinished games where ${username} is player one or two`
+      `deleting unfinished games where ${username} is the only player in an unfinished game`
     );
     const user = await User.findOne({ username });
     await Game.deleteMany({
-      $or: [{ playerOne: user }, { playerTwo: user }],
+      $or: [
+        { $and: [{ playerOne: user }, { playerTwo: null }] },
+        { $and: [{ playerTwo: user }, { playerOne: null }] },
+      ],
+      // $or: [{ playerOne: user }, { playerTwo: user }],
       timeFinished: null,
     });
   });

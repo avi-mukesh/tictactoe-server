@@ -18,8 +18,6 @@ const login = asyncHandler(async (req, res) => {
 
   const foundUser = await User.findOne({ username }).exec();
 
-  console.log("found user:", foundUser);
-
   if (!foundUser)
     return res
       .status(401)
